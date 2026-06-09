@@ -1,0 +1,42 @@
+services:
+  db-notifications:
+    image: postgres:18.3-alpine3.23
+    container_name: innovatech-db-notifications
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Innovatech2026!
+      POSTGRES_DB: innovatech_notifications
+    ports:
+      - "5434:5432"
+    volumes:
+      - notifications_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innovatech_notifications"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notifications-network
+
+  fs3_ms_notifications:
+    build: .
+    container_name: fs3_ms_notifications
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-notifications:5432/innovatech_notifications
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=Innovatech2026!
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      db-notifications:
+        condition: service_healthy
+    networks:
+      - notifications-network
+
+networks:
+  notifications-network:
+    driver: bridge
+
+volumes:
+  notifications_data:
